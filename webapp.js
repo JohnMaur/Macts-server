@@ -261,6 +261,132 @@ app.post('/rfidRegistration/:tuptId', (req, res) => {
   });
 });
 
+// ----------------------Adding Attendance---------------------------------
+app.post('/add-Attendance', (req, res) => {
+  const { attendance_description, attendance_code, attendance_date } = req.body;
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error("Error connecting to database:", err);
+      return res.status(500).json({ error: "Database connection error" })
+    }
+    const sql = `INSERT INTO attendance (attendance_description, attendance_code, attendance_date) VALUES (?, ?, ?)`;
+    const values = [attendance_description, attendance_code, attendance_date];
+
+    connection.query(sql, values, (err, result) => {
+      connection.release(); // Release the connection back to the pool
+
+      if (err) {
+        console.error('Error adding attendance:', err);
+        res.status(500).json({ error: 'An error occurred while adding attendance' });
+        return;
+      }
+
+      console.log('Attendance added successfully');
+      res.status(201).json({ message: 'Attendance added successfully' });
+    });
+  });
+});
+
+// ----------------------Fetching Attendance List----------------------------
+app.get('/attendance', (req, res) => {
+  // Perform a database query to fetch the attendance data
+  pool.query('SELECT * FROM attendance', (error, results) => {
+    if (error) {
+      console.error('Error fetching attendance data:', error);
+      res.status(500).json({ error: 'An error occurred while fetching attendance data' });
+      return;
+    }
+
+    // If data is fetched successfully, send it back to the client
+    res.json(results);
+  });
+});
+
+// ----------------------Fetching Attendance Report-------------------------
+// app.post('/AttendanceReport', (req, res) => {
+//   // Get a connection from the pool
+//   pool.getConnection((err, connection) => {
+//     if (err) {
+//       console.error('Error connecting to database:', err);
+//       return res.status(500).json({ error: 'Database connection error' });
+//     }
+
+//     // Perform the database query to fetch data for BTVTEICT-CP-3D
+//     connection.query("SELECT * FROM attendance_taphistory", (error, rows) => {
+//       // Release the connection
+//       connection.release();
+
+//       if (error) {
+//         console.error('Error fetching tap history student information:', error);
+//         return res.status(500).json({ error: 'Error fetching tap history student information' });
+//       }
+      
+//       // Send the fetched data
+//       res.json(rows);
+//     });
+//   });
+// });
+
+// app.get('/attendance/report', (req, res) => {
+//   const { code } = req.body;
+
+//   if (!code) {
+//     return res.status(400).json({ error: 'Attendance code is required' });
+//   }
+
+//   // Get a connection from the pool
+//   pool.getConnection((err, connection) => {
+//     if (err) {
+//       console.error('Error connecting to database:', err);
+//       return res.status(500).json({ error: 'Database connection error' });
+//     }
+
+//     // Perform the database query to fetch data for the provided attendance code
+//     const query = 'SELECT * FROM attendance_taphistory WHERE attendance_code = ?';
+//     connection.query(query, [code], (error, rows) => {
+//       // Release the connection
+//       connection.release();
+
+//       if (error) {
+//         console.error('Error fetching tap history student information:', error);
+//         return res.status(500).json({ error: 'Error fetching tap history student information' });
+//       }
+
+//       // Send the fetched data
+//       res.json(rows);
+//     });
+//   });
+// });
+
+app.get('/attendance/report/:code', (req, res) => {
+  const { code } = req.params;
+
+  // Get a connection from the pool
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+      return res.status(500).json({ error: 'Database connection error' });
+    }
+
+    // Perform the database query to fetch data for the provided attendance code
+    const query = 'SELECT * FROM attendance_taphistory WHERE attendance_code = ?';
+    connection.query(query, [code], (error, rows) => {
+      // Release the connection
+      connection.release();
+
+      if (error) {
+        console.error('Error fetching tap history student information:', error);
+        return res.status(500).json({ error: 'Error fetching tap history student information' });
+      }
+
+      // Send the fetched data
+      res.json(rows);
+    });
+  });
+});
+
+
+
 // ----------------------Attendance fetch API--------------------------------
 // API endpoint to fetch data for BTVTEICT-CP-1D
 app.get('/BTVTEICT-CP-1D', (req, res) => {

@@ -262,7 +262,7 @@ app.get('/rfid_history/:user_id', (req, res) => {
 
 // ---------------------Attendance RFID tap history-------------------------
 app.post('/attendance_history', (req, res) => {
-  const { firstName, middleName, lastName, tuptId, course, section, email, date, user_id } = req.body;
+  const { firstName, middleName, lastName, tuptId, course, section, email, code, date, user_id } = req.body;
 
   // Get a connection from the pool
   pool.getConnection((err, connection) => {
@@ -272,7 +272,7 @@ app.post('/attendance_history', (req, res) => {
     }
 
     // Perform the database query
-    connection.query('INSERT INTO attendance_taphistory (attendance_firstName, attendance_middleName, attendance_Lastname, attendance_tupId, attendance_course, attendance_section, attendance_email, attendance_historyDate, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [firstName, middleName, lastName, tuptId, course, section, email, date, user_id], (error, results) => {
+    connection.query('INSERT INTO attendance_taphistory (attendance_firstName, attendance_middleName, attendance_Lastname, attendance_tupId, attendance_course, attendance_section, attendance_email, attendance_code,attendance_historyDate, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [firstName, middleName, lastName, tuptId, course, section, email, code, date, user_id], (error, results) => {
       // Release the connection
       connection.release();
 
