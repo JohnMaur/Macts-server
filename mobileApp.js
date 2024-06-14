@@ -103,6 +103,38 @@ app.post('/student_registration', (req, res) => {
     });
   });
 });
+
+// --------------------Checking TUPT ID IF IT IS EXIST-------------------
+app.post('/check_tupt_id/:tuptId', (req, res) => {
+  const { tuptId } = req.params;
+
+  // Get a connection from the pool
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+      return res.status(500).json({ error: 'Database connection error' });
+    }
+
+    // Perform the database query to check if the TUPT-ID exists
+    connection.query('SELECT * FROM studentinfo WHERE studentInfo_tuptId = ?', [tuptId], (error, results) => {
+      // Release the connection
+      connection.release();
+
+      if (error) {
+        console.error('Error executing query:', error);
+        return res.status(500).json({ error: 'Database query error' });
+      }
+
+      // Send response based on whether the TUPT-ID exists
+      if (results.length > 0) {
+        res.json({ exists: true });
+      } else {
+        res.json({ exists: false });
+      }
+    });
+  });
+});
+
 // ---------------------Student info display---------------------------
 app.get('/studentinfo/:user_id', (req, res) => {
   const userId = req.params.user_id;
@@ -260,6 +292,38 @@ app.get('/rfid_history/:user_id', (req, res) => {
   });
 });
 
+// --------------------------Checking Attendance code------------------------
+app.post('/attendanceCode', (req, res) => {
+  const { code } = req.body; // Assuming the code is sent in the request body
+
+  // Get a connection from the pool
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+      return res.status(500).json({ error: 'Database connection error' });
+    }
+
+    // Perform the database query to check if the code exists
+    connection.query('SELECT * FROM attendance WHERE attendance_code = ?', [code], (error, rows) => {
+      // Release the connection
+      connection.release();
+      if (error) {
+        console.error('Error fetching data:', error);
+        return res.status(500).json({ error: 'Error fetching data' });
+      }
+
+      // Check if any rows were returned (code exists)
+      if (rows.length > 0) {
+        // Send success response
+        res.json({ success: true });
+      } else {
+        // Send error response (invalid code)
+        res.status(400).json({ error: 'Invalid code' });
+      }
+    });
+  });
+});
+
 // ---------------------Attendance RFID tap history-------------------------
 app.post('/attendance_history', (req, res) => {
   const { firstName, middleName, lastName, tuptId, course, section, email, code, date, user_id } = req.body;
@@ -288,7 +352,7 @@ app.post('/attendance_history', (req, res) => {
 });
 
 // ------------------Fetch Attendance tap history----------------------------
-app.get('/attendance_tapHistory/:user_id', (req, res) => {
+app.post('/attendance_tapHistory/:user_id', (req, res) => {
   const userId = req.params.user_id;
 
   // Get a connection from the pool
