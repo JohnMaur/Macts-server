@@ -226,16 +226,20 @@ app.post('/update_device/:user_id', (req, res) => {
       return res.status(500).json({ error: 'Database connection error' });
     }
 
-    connection.query('UPDATE student_device SET device_name = ?, device_serialNumber = ?, device_color = ?, device_brand = ?, device_image_url = ?', [device_name, device_serialNumber, device_color, device_brand, device_image_url, userId], (error, result) => {
-      connection.release();
+    connection.query(
+      'UPDATE student_device SET device_name = ?, device_serialNumber = ?, device_color = ?, device_brand = ?, device_image_url = ? WHERE user_id = ?',
+      [device_name, device_serialNumber, device_color, device_brand, device_image_url, userId],
+      (error, result) => {
+        connection.release();
 
-      if (error) {
-        console.error('Error updating device information:', error);
-        return res.status(500).json({ error: 'Error updating device information' });
+        if (error) {
+          console.error('Error updating device information:', error);
+          return res.status(500).json({ error: 'Error updating device information' });
+        }
+
+        res.json({ success: true, message: 'Device information updated successfully' });
       }
-
-      res.json({ success: true, message: 'Device information updated successfully' });
-    });
+    );
   });
 });
 
@@ -265,6 +269,8 @@ app.get('/get_device/:user_id', (req, res) => {
     });
   });
 });
+
+// -----------------------END Fetch Student Device---------------------------
 
 // API endpoint to fetch student information
 app.get('/rfid_history/:user_id', (req, res) => {
@@ -379,7 +385,7 @@ app.post('/attendance_tapHistory/:user_id', (req, res) => {
 
 // ---------------------Gatepass RFID tap history-------------------------
 app.post('/Gatepass_history', (req, res) => {
-  const { firstName, middleName, lastName, tuptId, course, section, email, date, user_id } = req.body;
+  const { firstName, middleName, lastName, tuptId, course, section, deviceName, serialNumber, date, user_id } = req.body;
 
   // Get a connection from the pool
   pool.getConnection((err, connection) => {
@@ -389,7 +395,7 @@ app.post('/Gatepass_history', (req, res) => {
     }
 
     // Perform the database query
-    connection.query('INSERT INTO gatepass_taphistory (gatepass_firstname, gatepass_middlename, gatepass_lastname, gatepass_tupID, gatepass_course, gatepass_section, gatepass_email, gatepass_historyDate, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [firstName, middleName, lastName, tuptId, course, section, email, date, user_id], (error, results) => {
+    connection.query('INSERT INTO gatepass_taphistory (gatepass_firstname, gatepass_middlename, gatepass_lastname, gatepass_tupID, gatepass_course, gatepass_section, device_name, serial_number, gatepass_historyDate, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [firstName, middleName, lastName, tuptId, course, section, deviceName, serialNumber, date, user_id], (error, results) => {
       // Release the connection
       connection.release();
 

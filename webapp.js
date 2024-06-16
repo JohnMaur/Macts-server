@@ -261,6 +261,79 @@ app.post('/rfidRegistration/:tuptId', (req, res) => {
   });
 });
 
+// --------------------Device Registration---------------------------------
+// API endpoint to fetch student information based on TUPT-ID
+app.get('/deviceRegistration', (req, res) => {
+  const { serialNumber } = req.query;
+
+  // Check if TUPT-ID is provided
+  if (!serialNumber) {
+    return res.status(400).json({ error: 'Serial Number is required' });
+  }
+
+  // Get a connection from the pool
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+      return res.status(500).json({ error: 'Database connection error' });
+    }
+
+    // Perform the database query
+    connection.query('SELECT * FROM student_device WHERE device_serialNumber = ?', [serialNumber], (error, rows) => {
+      // Release the connection
+      connection.release();
+
+      if (error) {
+        console.error('Error fetching Device information:', error);
+        return res.status(500).json({ error: 'Error fetching Device information' });
+      }
+
+      // Check if student with the provided TUPT-ID exists
+      if (rows.length === 0) {
+        return res.status(404).json({ error: 'Device not found with the provided Serial Number' });
+      }
+
+      // Send the fetched data
+      res.json(rows);
+    });
+  });
+});
+
+// API endpoint to insert Device code value into the database for a specific Device
+app.post('/deviceRegistration/:serialNumber', (req, res) => {
+  const { serialNumber } = req.params;
+  const { deviceCode } = req.body; // Ensure the client sends the correct property
+
+  // Check if both serialNumber and deviceCode are provided
+  if (!serialNumber || !deviceCode) {
+    return res.status(400).json({ error: 'Serial number and Device code are required' });
+  }
+
+  // Get a connection from the pool
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+      return res.status(500).json({ error: 'Database connection error' });
+    }
+
+    // Perform the database query to insert deviceCode into the student account
+    connection.query('UPDATE student_device SET deviceRegistration = ? WHERE device_serialNumber = ?', [deviceCode, serialNumber], (error, result) => {
+      // Release the connection
+      connection.release();
+
+      if (error) {
+        console.error('Error inserting Device code:', error);
+        return res.status(500).json({ error: 'Error inserting device code' });
+      }
+
+      console.log('Device code inserted successfully for Serial number:', serialNumber);
+      res.json({ success: true });
+    });
+  });
+});
+
+// --------------------END Device Registration---------------------------------
+
 // ----------------------Adding Attendance---------------------------------
 app.post('/add-Attendance', (req, res) => {
   const { attendance_description, attendance_code, attendance_date } = req.body;
@@ -384,8 +457,6 @@ app.get('/attendance/report/:code', (req, res) => {
     });
   });
 });
-
-
 
 // ----------------------Attendance fetch API--------------------------------
 // API endpoint to fetch data for BTVTEICT-CP-1D
@@ -590,6 +661,32 @@ app.get('/Gatepass-Report', (req, res) => {
 });
 
 // ---------------------ND of REPORT API------------------------------
+
+// --------------------Fetch Device List-----------------------------
+app.post('/DeviceList', (req, res) => {
+  // Get a connection from the pool
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+      return res.status(500).json({ error: 'Database connection error' });
+    }
+
+    // Perform the database query to fetch data for devices with deviceRegistration as null
+    connection.query("SELECT * FROM student_device WHERE deviceRegistration = ''", (error, rows) => {
+      // Release the connection
+      connection.release();
+
+      if (error) {
+        console.error('Error fetching device information:', error);
+        return res.status(500).json({ error: 'Error fetching device information' });
+      }
+      
+      // Send the fetched data
+      res.json(rows);
+    });
+  });
+});
+
 
 // ------------------------PDF Download server------------------------
 // BTVTEICT-CP-1D
