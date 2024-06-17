@@ -116,6 +116,80 @@ app.get('/studentDevice', (req, res) => {
 
 // -------------------------Faculty Login API--------------------------------
 // Route to handle Faculty login
+// app.post('/faculty', (req, res) => {
+//   const { faculty_user, faculty_pass } = req.body;
+
+//   // Check if Faculty credentials are provided
+//   if (!faculty_user || !faculty_pass) {
+//     return res.status(400).json({ error: 'Faculty username and password are required' });
+//   }
+
+//   // Get a connection from the pool
+//   pool.getConnection((err, connection) => {
+//     if (err) {
+//       console.error('Error connecting to database:', err);
+//       return res.status(500).json({ error: 'Database connection error' });
+//     }
+
+//     // Perform the database query to authenticate faculty
+//     connection.query('SELECT * FROM teacher_login WHERE teacher_user = ? AND teacher_pass = ?', [faculty_user, faculty_pass], (error, teacherResults) => {
+//       if (error) {
+//         console.error('Error fetching data:', error);
+//         connection.release();
+//         return res.status(500).json({ error: 'Error fetching data' });
+//       }
+
+//       // If no result from teacher_login, check librarian_login
+//       if (teacherResults.length === 0) {
+//         connection.query('SELECT * FROM librarian_login WHERE librarian_user = ? AND librarian_pass = ?', [faculty_user, faculty_pass], (error, librarianResults) => {
+//           // If no result from librarian_login, check gym_login
+//           if (librarianResults.length === 0) {
+//             connection.query('SELECT * FROM gym_login WHERE gym_user = ? AND gym_pass = ?', [faculty_user, faculty_pass], (error, gymResults) => {
+//               // If no result from gym_login, check guard_login
+//               if (gymResults.length === 0) {
+//                 connection.query('SELECT * FROM guard_login WHERE guard_user = ? AND guard_pass = ?', [faculty_user, faculty_pass], (error, guardResults) => {
+//                   // If no result from guard_login, check registrar_login
+//                   if (guardResults.length === 0) {
+//                     connection.query('SELECT * FROM registrar_login WHERE registrar_user = ? AND registrar_pass = ?', [faculty_user, faculty_pass], (error, registrarResults) => {
+//                       // Release the connection
+//                       connection.release();
+//                       if (error) {
+//                         console.error('Error fetching data:', error);
+//                         return res.status(500).json({ error: 'Error fetching data' });
+//                       }
+
+//                       // Check if registrar user exists and credentials match
+//                       if (registrarResults.length === 0) {
+//                         // No faculty found or incorrect credentials
+//                         return res.status(401).json({ error: 'Invalid username or password' });
+//                       }
+
+//                       // Registrar user authenticated successfully
+//                       res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'registrar' });
+//                     });
+//                   } else {
+//                     // Guard user authenticated successfully
+//                     res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'guard' });
+//                   }
+//                 });
+//               } else {
+//                 // Gym user authenticated successfully
+//                 res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'gym' });
+//               }
+//             });
+//           } else {
+//             // Librarian authenticated successfully
+//             res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'librarian' });
+//           }
+//         });
+//       } else {
+//         // Teacher authenticated successfully
+//         res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'teacher' });
+//       }
+//     });
+//   });
+// });
+
 app.post('/faculty', (req, res) => {
   const { faculty_user, faculty_pass } = req.body;
 
@@ -139,56 +213,46 @@ app.post('/faculty', (req, res) => {
         return res.status(500).json({ error: 'Error fetching data' });
       }
 
-      // If no result from teacher_login, check librarian_login
-      if (teacherResults.length === 0) {
+      if (teacherResults.length > 0) {
+        const teacher = teacherResults[0];
+        res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'teacher', userId: teacher.teacher_id });
+        connection.release();
+      } else {
         connection.query('SELECT * FROM librarian_login WHERE librarian_user = ? AND librarian_pass = ?', [faculty_user, faculty_pass], (error, librarianResults) => {
-          // If no result from librarian_login, check gym_login
-          if (librarianResults.length === 0) {
+          if (librarianResults.length > 0) {
+            const librarian = librarianResults[0];
+            res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'librarian', userId: librarian.librarian_id });
+          } else {
             connection.query('SELECT * FROM gym_login WHERE gym_user = ? AND gym_pass = ?', [faculty_user, faculty_pass], (error, gymResults) => {
-              // If no result from gym_login, check guard_login
-              if (gymResults.length === 0) {
+              if (gymResults.length > 0) {
+                const gym = gymResults[0];
+                res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'gym', userId: gym.gym_id });
+              } else {
                 connection.query('SELECT * FROM guard_login WHERE guard_user = ? AND guard_pass = ?', [faculty_user, faculty_pass], (error, guardResults) => {
-                  // If no result from guard_login, check registrar_login
-                  if (guardResults.length === 0) {
+                  if (guardResults.length > 0) {
+                    const guard = guardResults[0];
+                    res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'guard', userId: guard.guard_id });
+                  } else {
                     connection.query('SELECT * FROM registrar_login WHERE registrar_user = ? AND registrar_pass = ?', [faculty_user, faculty_pass], (error, registrarResults) => {
-                      // Release the connection
                       connection.release();
-                      if (error) {
-                        console.error('Error fetching data:', error);
-                        return res.status(500).json({ error: 'Error fetching data' });
-                      }
-
-                      // Check if registrar user exists and credentials match
-                      if (registrarResults.length === 0) {
-                        // No faculty found or incorrect credentials
+                      if (registrarResults.length > 0) {
+                        const registrar = registrarResults[0];
+                        res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'registrar', userId: registrar.registrar_id });
+                      } else {
                         return res.status(401).json({ error: 'Invalid username or password' });
                       }
-
-                      // Registrar user authenticated successfully
-                      res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'registrar' });
                     });
-                  } else {
-                    // Guard user authenticated successfully
-                    res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'guard' });
                   }
                 });
-              } else {
-                // Gym user authenticated successfully
-                res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'gym' });
               }
             });
-          } else {
-            // Librarian authenticated successfully
-            res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'librarian' });
           }
         });
-      } else {
-        // Teacher authenticated successfully
-        res.status(200).json({ message: 'Faculty authenticated successfully', userType: 'teacher' });
       }
     });
   });
 });
+
 
 // ---------------------RFID Registration API--------------------------- 
 // API endpoint to fetch student information based on TUPT-ID
@@ -375,62 +439,52 @@ app.get('/attendance', (req, res) => {
   });
 });
 
+// -------------------Faculty Teacher Attendance-------------------------
+// ----------------------Adding Attendance---------------------------------
+app.post('/Facultyadd-Attendance', (req, res) => {
+  const { attendance_description, attendance_code, attendance_date, userId } = req.body;
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error("Error connecting to database:", err);
+      return res.status(500).json({ error: "Database connection error" });
+    }
+    const sql = `INSERT INTO attendance (attendance_description, attendance_code, attendance_date, userId) VALUES (?, ?, ?, ?)`;
+    const values = [attendance_description, attendance_code, attendance_date, userId];
+
+    connection.query(sql, values, (err, result) => {
+      connection.release(); // Release the connection back to the pool
+
+      if (err) {
+        console.error('Error adding attendance:', err);
+        res.status(500).json({ error: 'An error occurred while adding attendance' });
+        return;
+      }
+
+      console.log('Attendance added successfully');
+      res.status(201).json({ message: 'Attendance added successfully' });
+    });
+  });
+});
+
+// ----------------------Fetching Attendance List----------------------------
+app.get('/Facultyattendance/:userId', (req, res) => {
+  const { userId } = req.params;
+  // Perform a database query to fetch the attendance data for a specific user
+  pool.query('SELECT * FROM attendance WHERE userId = ?', [userId], (error, results) => {
+    if (error) {
+      console.error('Error fetching attendance data:', error);
+      res.status(500).json({ error: 'An error occurred while fetching attendance data' });
+      return;
+    }
+
+    // If data is fetched successfully, send it back to the client
+    res.json(results);
+  });
+});
+
+// -------------------END Faculty Teacher Attendance-------------------------
+
 // ----------------------Fetching Attendance Report-------------------------
-// app.post('/AttendanceReport', (req, res) => {
-//   // Get a connection from the pool
-//   pool.getConnection((err, connection) => {
-//     if (err) {
-//       console.error('Error connecting to database:', err);
-//       return res.status(500).json({ error: 'Database connection error' });
-//     }
-
-//     // Perform the database query to fetch data for BTVTEICT-CP-3D
-//     connection.query("SELECT * FROM attendance_taphistory", (error, rows) => {
-//       // Release the connection
-//       connection.release();
-
-//       if (error) {
-//         console.error('Error fetching tap history student information:', error);
-//         return res.status(500).json({ error: 'Error fetching tap history student information' });
-//       }
-      
-//       // Send the fetched data
-//       res.json(rows);
-//     });
-//   });
-// });
-
-// app.get('/attendance/report', (req, res) => {
-//   const { code } = req.body;
-
-//   if (!code) {
-//     return res.status(400).json({ error: 'Attendance code is required' });
-//   }
-
-//   // Get a connection from the pool
-//   pool.getConnection((err, connection) => {
-//     if (err) {
-//       console.error('Error connecting to database:', err);
-//       return res.status(500).json({ error: 'Database connection error' });
-//     }
-
-//     // Perform the database query to fetch data for the provided attendance code
-//     const query = 'SELECT * FROM attendance_taphistory WHERE attendance_code = ?';
-//     connection.query(query, [code], (error, rows) => {
-//       // Release the connection
-//       connection.release();
-
-//       if (error) {
-//         console.error('Error fetching tap history student information:', error);
-//         return res.status(500).json({ error: 'Error fetching tap history student information' });
-//       }
-
-//       // Send the fetched data
-//       res.json(rows);
-//     });
-//   });
-// });
-
 app.get('/attendance/report/:code', (req, res) => {
   const { code } = req.params;
 
@@ -1080,4 +1134,3 @@ const PORT = process.env.PORT || 2526;
 app.listen(PORT, () => {
   console.log(`Admin server is running on port ${PORT}`);
 });
-
