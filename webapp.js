@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
+const jwt = require('jsonwebtoken');  // Import jsonwebtoken
 const cors = require('cors');
 const moment = require('moment');
 
@@ -28,6 +29,9 @@ app.use(cors({
 
 // --------------------ADMIN and Dashboard API------------------------------
 // Route to handle admin login
+// Define your secret key for JWT token signing
+const SECRET_KEY = 'your_secret_key';
+
 app.post('/admin', (req, res) => {
   const { admin_username, admin_password } = req.body;
 
@@ -44,25 +48,67 @@ app.post('/admin', (req, res) => {
     }
 
     // Perform the database query to authenticate admin
-    connection.query('SELECT * FROM admin_login WHERE admin_username = ? AND admin_password = ?', [admin_username, admin_password], (error, results) => {
-      // Release the connection
-      connection.release();
-      if (error) {
-        console.error('Error fetching data:', error);
-        return res.status(500).json({ error: 'Error fetching data' });
-      }
+    connection.query(
+      'SELECT * FROM admin_login WHERE admin_username = ? AND admin_password = ?',
+      [admin_username, admin_password],
+      (error, results) => {
+        // Release the connection
+        connection.release();
 
-      // Check if admin exists and credentials match
-      if (results.length === 0) {
-        // No admin found or incorrect credentials
-        return res.status(401).json({ error: 'Invalid username or password' });
-      }
+        if (error) {
+          console.error('Error fetching data:', error);
+          return res.status(500).json({ error: 'Error fetching data' });
+        }
 
-      // Admin authenticated successfully
-      res.status(200).json({ message: 'Admin authenticated successfully' });
-    });
+        // Check if admin exists and credentials match
+        if (results.length === 0) {
+          // No admin found or incorrect credentials
+          return res.status(401).json({ error: 'Invalid username or password' });
+        }
+
+        // Admin authenticated successfully, generate a token
+        const token = jwt.sign({ username: admin_username }, SECRET_KEY, { expiresIn: '30d' });
+        res.status(200).json({ token });
+      }
+    );
   });
 });
+// // Route to handle admin login
+// app.post('/admin', (req, res) => {
+//   const { admin_username, admin_password } = req.body;
+
+//   // Check if admin credentials are provided
+//   if (!admin_username || !admin_password) {
+//     return res.status(400).json({ error: 'Admin username and password are required' });
+//   }
+
+//   // Get a connection from the pool
+//   pool.getConnection((err, connection) => {
+//     if (err) {
+//       console.error('Error connecting to database:', err);
+//       return res.status(500).json({ error: 'Database connection error' });
+//     }
+
+//     // Perform the database query to authenticate admin
+//     connection.query('SELECT * FROM admin_login WHERE admin_username = ? AND admin_password = ?', [admin_username, admin_password], (error, results) => {
+//       // Release the connection
+//       connection.release();
+//       if (error) {
+//         console.error('Error fetching data:', error);
+//         return res.status(500).json({ error: 'Error fetching data' });
+//       }
+
+//       // Check if admin exists and credentials match
+//       if (results.length === 0) {
+//         // No admin found or incorrect credentials
+//         return res.status(401).json({ error: 'Invalid username or password' });
+//       }
+
+//       // Admin authenticated successfully
+//       res.status(200).json({ message: 'Admin authenticated successfully' });
+//     });
+//   });
+// });
 
 // API endpoint to fetch student information
 app.get('/studentinfo', (req, res) => {
