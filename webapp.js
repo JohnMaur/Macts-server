@@ -73,6 +73,162 @@ app.post('/admin', (req, res) => {
   });
 });
 
+// --------------------Faculty Registration---------------------------------
+app.post('/teacherSignUp', (req, res) => {
+  // Extract user data from the request body
+  const { username, password, email } = req.body;
+
+  // Get a connection from the pool
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+      return res.status(500).json({ error: 'Database connection error' });
+    }
+
+    // Insert the user data into the database
+    const sql = "INSERT INTO teacher_login (teacher_user, teacher_pass, teacher_email) VALUES (?, ?, ?)";
+    connection.query(sql, [username, password, email], (error, result) => {
+      // Release the connection
+      connection.release();
+
+      if (error) {
+        console.error('Error signing up:', error);
+        return res.status(500).json({ error: 'Error signing up' });
+      }
+
+      // Send a success response
+      res.status(200).json({ message: 'User signed up successfully' });
+    });
+  });
+});
+
+app.post('/registrarSignUp', (req, res) => {
+  // Extract user data from the request body
+  const { username, password, email } = req.body;
+
+  // Get a connection from the pool
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+      return res.status(500).json({ error: 'Database connection error' });
+    }
+
+    // Insert the user data into the database
+    const sql = "INSERT INTO registrar_login (registrar_user, registrar_pass, registrar_email) VALUES (?, ?, ?)";
+    connection.query(sql, [username, password, email], (error, result) => {
+      // Release the connection
+      connection.release();
+
+      if (error) {
+        console.error('Error signing up:', error);
+        return res.status(500).json({ error: 'Error signing up' });
+      }
+
+      // Send a success response
+      res.status(200).json({ message: 'User signed up successfully' });
+    });
+  });
+});
+
+app.post('/LibrarianSignUp', (req, res) => {
+  // Extract user data from the request body
+  const { username, password, email } = req.body;
+
+  // Get a connection from the pool
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+      return res.status(500).json({ error: 'Database connection error' });
+    }
+
+    // Insert the user data into the database
+    const sql = "INSERT INTO librarian_login (librarian_user, librarian_pass, librarian_email) VALUES (?, ?, ?)";
+    connection.query(sql, [username, password, email], (error, result) => {
+      // Release the connection
+      connection.release();
+
+      if (error) {
+        console.error('Error signing up:', error);
+        return res.status(500).json({ error: 'Error signing up' });
+      }
+
+      // Send a success response
+      res.status(200).json({ message: 'User signed up successfully' });
+    });
+  });
+});
+
+app.post('/GymSignUp', (req, res) => {
+  // Extract user data from the request body
+  const { username, password, email } = req.body;
+
+  // Get a connection from the pool
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+      return res.status(500).json({ error: 'Database connection error' });
+    }
+
+    // Insert the user data into the database
+    const sql = "INSERT INTO gym_login (gym_user, gym_pass, gym_email) VALUES (?, ?, ?)";
+    connection.query(sql, [username, password, email], (error, result) => {
+      // Release the connection
+      connection.release();
+
+      if (error) {
+        console.error('Error signing up:', error);
+        return res.status(500).json({ error: 'Error signing up' });
+      }
+
+      // Send a success response
+      res.status(200).json({ message: 'User signed up successfully' });
+    });
+  });
+});
+
+app.post('/GuardSignUp', (req, res) => {
+  // Extract user data from the request body
+  const { username, password, email } = req.body;
+
+  // Check if username already exists
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+      return res.status(500).json({ error: 'Database connection error' });
+    }
+
+    const checkUsernameQuery = "SELECT COUNT(*) AS count FROM guard_login WHERE guard_user = ?";
+    connection.query(checkUsernameQuery, [username], (error, results) => {
+      if (error) {
+        connection.release();
+        console.error('Error checking username:', error);
+        return res.status(500).json({ error: 'Error checking username' });
+      }
+
+      const usernameExists = results[0].count > 0;
+
+      if (usernameExists) {
+        connection.release();
+        return res.status(400).json({ error: 'Your username is already taken, please try again' });
+      }
+
+      // Proceed with signup
+      const insertUserQuery = "INSERT INTO guard_login (guard_user, guard_pass, guard_email) VALUES (?, ?, ?)";
+      connection.query(insertUserQuery, [username, password, email], (insertError, result) => {
+        connection.release(); // Release the connection
+
+        if (insertError) {
+          console.error('Error signing up:', insertError);
+          return res.status(500).json({ error: 'Error signing up' });
+        }
+
+        // Send success response
+        res.status(200).json({ message: 'User signed up successfully' });
+      });
+    });
+  });
+});
+
 // -------------------------Faculty Login API--------------------------------
 app.post('/faculty', (req, res) => {
   const { faculty_user, faculty_pass } = req.body;
