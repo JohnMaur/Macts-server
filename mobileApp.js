@@ -271,7 +271,6 @@ app.get('/get_device/:user_id', (req, res) => {
 });
 
 // -----------------------END Fetch Student Device---------------------------
-
 // API endpoint to fetch student information
 app.get('/rfid_history/:user_id', (req, res) => {
   const userId = req.params.user_id;
@@ -358,6 +357,7 @@ app.post('/attendance_history', (req, res) => {
 });
 
 // ------------------Fetch Attendance tap history----------------------------
+// Fetch Attendance tap history with description
 app.post('/attendance_tapHistory/:user_id', (req, res) => {
   const userId = req.params.user_id;
 
@@ -368,8 +368,13 @@ app.post('/attendance_tapHistory/:user_id', (req, res) => {
       return res.status(500).json({ error: 'Database connection error' });
     }
 
-    // Perform the database query
-    connection.query('SELECT * FROM attendance_taphistory WHERE user_id = ?', [userId], (error, rows) => {
+    // Perform the database query with JOIN to get attendance description
+    connection.query(`
+      SELECT th.*, a.attendance_description 
+      FROM attendance_taphistory th
+      LEFT JOIN attendance a ON th.attendance_code = a.attendance_code
+      WHERE th.user_id = ?
+    `, [userId], (error, rows) => {
       // Release the connection
       connection.release();
 
